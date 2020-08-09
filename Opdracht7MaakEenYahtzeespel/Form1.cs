@@ -19,5 +19,11 @@ namespace Opdracht7MaakEenYahtzeespel
             yahtzee = new Yahtzee();
             LabelTest.Text = yahtzee.RunTest();
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            yahtzee.SetupGame();
+            LabelTest.Text = yahtzee.RunTest();
+        }
     }
 }
