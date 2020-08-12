@@ -11,6 +11,28 @@ namespace Opdracht7MaakEenYahtzeespel
         private static Random random;
         private const int defaultNumberOfSides = 6;
 
+        private int value;
+        private int numberOfSides;
+
+        public Dice()
+        {
+            numberOfSides = defaultNumberOfSides;
+            RollDie();
+        }
+        public Dice(int numberOfSides)
+        {
+            this.numberOfSides = numberOfSides;
+            RollDie();
+        }
+        public void RollDie()
+        {
+            value = RollDice(numberOfSides);
+        }
+        public int GetDieValue()
+        {
+            return value;
+        }
+
         private static void SetRandom()
         {
             if (random == null)

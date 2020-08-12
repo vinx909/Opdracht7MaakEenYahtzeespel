@@ -18,13 +18,14 @@ namespace Opdracht7MaakEenYahtzeespel
         private const int carréAmountOfDiceWithSameNumberThreshold = 4;
         private const int fullHouseAmountOfDiceWithSameNumberThresholdOne = 3;
         private const int fullHouseAmountOfDiceWithSameNumberThresholdTwo = 2;
+
         private const int fullHousePoints = 25;
         private const int kleineStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold = 4;
         private const int kleineStraatPoints = 30;
         private const int grooteStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold = 5;
         private const int grooteStraatPoints = 40;
 
-        private int[] dice;
+        private Dice[] dice;
         private List<int> dicePutAway;
         private int trowNumber;
         private List<PointOption> pointOptions;
@@ -34,6 +35,14 @@ namespace Opdracht7MaakEenYahtzeespel
         public Yahtzee()
         {
             SetupGame();
+        }
+        public static int GetNumberOfDice()
+        {
+            return numberOfDice;
+        }
+        public int GetNumberOfScoreOptions()
+        {
+            return pointOptions.Count;
         }
 
         public void SetupGame()
@@ -47,13 +56,17 @@ namespace Opdracht7MaakEenYahtzeespel
         {
             if (dice == null)
             {
-                dice = new int[numberOfDice];
+                dice = new Dice[numberOfDice];
+                for(int i = 0; i < dice.Length; i++)
+                {
+                    dice[i] = new Dice(numberOfDiceSides);
+                }
             }
             else
             {
                 for (int i = 0; i < dice.Length; i++)
                 {
-                    dice[i] = 0;
+                    dice[i].RollDie();
                 }
             }
         }
@@ -289,16 +302,118 @@ namespace Opdracht7MaakEenYahtzeespel
             string returnString = "";
             for (int i = 0; i < dice.Length; i++)
             {
-                dice[i] = Dice.RollDice(numberOfDiceSides);
-                returnString+="dice" + i + ": " + dice[i]+"\r\n";
+                dice[i].RollDie();
+                returnString+="dice" + i + ": " + dice[i].GetDieValue()+"\r\n";
             }
             for (int i = 0; i < pointOptions.Count; i++)
             {
-                returnString += pointOptions[i].GetName() + " " + pointOptions[i].GetText(dice) + "\r\n";
+                returnString += pointOptions[i].GetName() + " " + pointOptions[i].GetText(GetDiceResults()) + "\r\n";
             }
             return returnString;
         }
+        private int[] GetDiceResults()
+        {
+            int[] toReturn = new int[dice.Length];
+            for(int i = 0; i < dice.Length; i++)
+            {
+                toReturn[i] = dice[i].GetDieValue();
+            }
+            return toReturn;
+        }
+        public bool Reroll(object[] diceToPutAway)
+        {
+            foreach(object supposedlyDice in diceToPutAway)
+            {
+                if (!typeof(Dice).IsInstanceOfType(supposedlyDice))
+                {
+                    throw new Exception("object given isn't a dice");
+                }
+                bool inDice = false;
+                for (int i = 0; i < dice.Length; i++)
+                {
+                    if (dice[i] == supposedlyDice)
+                    {
+                        dicePutAway.Add(i);
+                        inDice = true;
+                    }
+                }
+                if (inDice == false)
+                {
+                    throw new Exception("dice to put away isn't in dice");
+                }
+            }
+            for (int i = 0; i < dice.Length; i++)
+            {
+                bool putaway = false;
+                foreach(int putAwayIndex in dicePutAway)
+                {
+                    if (i == putAwayIndex)
+                    {
+                        putaway = true;
+                    }
+                }
+                if (putaway == false)
+                {
+                    dice[i].RollDie();
+                }
+            }
 
+            bool canRerollAgain;
+            trowNumber++;
+            if(trowNumber< maxTrowNumber)
+            {
+                canRerollAgain = true;
+            }
+            else
+            {
+                canRerollAgain = false;
+            }
+            return canRerollAgain;
+        }
+        public Dice[] GetRerollableDice()
+        {
+            Dice[] returnDice = new Dice[dice.Length - dicePutAway.Count];
+            int currentIndex = 0;
+            for(int i = 0; i < dice.Length; i++)
+            {
+                bool putAway = false;
+                foreach(int putAwayIndex in dicePutAway)
+                {
+                    if (i == putAwayIndex)
+                    {
+                        putAway = true;
+                    }
+                }
+                if (putAway == false)
+                {
+                    returnDice[currentIndex] = dice[i];
+                    currentIndex++;
+                }
+            }
+            return returnDice;
+        }
+        public int[] GetNonrerollableDice()
+        {
+            int[] returnDice = new int[dicePutAway.Count];
+            int currentIndex = 0;
+            for (int i = 0; i < dice.Length; i++)
+            {
+                bool putAway = false;
+                foreach (int putAwayIndex in dicePutAway)
+                {
+                    if (i == putAwayIndex)
+                    {
+                        putAway = true;
+                    }
+                }
+                if (putAway == true)
+                {
+                    returnDice[currentIndex] = dice[i].GetDieValue();
+                    currentIndex++;
+                }
+            }
+            return returnDice;
+        }
         private int[] orderIntArray(int[] array)
         {
             if (array!=null&&array.Length > 0) {
