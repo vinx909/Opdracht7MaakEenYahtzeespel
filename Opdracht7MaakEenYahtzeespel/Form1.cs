@@ -12,14 +12,22 @@ namespace Opdracht7MaakEenYahtzeespel
 {
     public partial class Form1 : Form
     {
-        private const int buttonHeightLeftOver = 2;
+        private const string exceptionUpdateDiceDoesntFullyExist = "ether diceButtons, diceButtonFunctions or diceLabels does not exist";
+        private const string exceptionUpdateScoreOptionButtonsDoesntFullyExist = "ether scoreOptionButtons or scoreOptionButtonFunction does not exist";
+        private const string rerollButtonString = "reroll";
+        private const string messageBoxScoreOptionNotPossible = "the chosen option isn't possible";
 
+        private const int buttonHeightLeftOver = 2;
+        
         private int diceButtonWith;
         private int buttonHeight;
         private Button[] diceButtons;
         private Label[] diceLabels;
         private List<Dice> diceToPutAway;
         private ButtonFunction[] diceButtonFunctions;
+
+        private Button rerollButton;
+        private Label scoreBoard;
 
         private Button[] scoreOptionButtons;
         private ButtonFunction[] scoreOptionButtonFunction;
@@ -29,16 +37,19 @@ namespace Opdracht7MaakEenYahtzeespel
         {
             InitializeComponent();
             yahtzee = new Yahtzee();
-            diceButtonWith = this.ClientRectangle.Width / Yahtzee.GetNumberOfDice();
-            buttonHeight = this.ClientRectangle.Height / yahtzee.GetNumberOfScoreOptions() + 1 + buttonHeightLeftOver;
+            diceButtonWith = this.ClientRectangle.Width / (Yahtzee.GetNumberOfDice() + 1);
+            buttonHeight = this.ClientRectangle.Height / (yahtzee.GetNumberOfScoreOptions() + 1 + buttonHeightLeftOver);
             diceToPutAway = new List<Dice>();
 
             UpdateDice();
+            UpdateScoreOptionButtons();
+            UpdateRerollButton();
+            UpdateScoreBoard();
         }
 
         private void UpdateDice()
         {
-            if (diceButtons == null && diceButtonFunctions == null && diceLabels == null && scoreOptionButtons==null && scoreOptionButtonFunction == null)
+            if (diceButtons == null && diceButtonFunctions == null && diceLabels == null)
             {
                 diceButtons = new Button[Yahtzee.GetNumberOfDice()];
                 diceLabels = new Label[diceButtons.Length];
@@ -105,13 +116,10 @@ namespace Opdracht7MaakEenYahtzeespel
 
                     Controls.Add(diceButtons[i]);
                 }
-
-                scoreOptionButtons = new Button[yahtzee.GetNumberOfScoreOptions()];
-                scoreOptionButtonFunction = new ButtonFunction[scoreOptionButtons.Length];
             }
-            else if (diceButtons == null || diceButtonFunctions == null || diceLabels == null || scoreOptionButtons == null || scoreOptionButtonFunction == null)
+            else if (diceButtons == null || diceButtonFunctions == null || diceLabels == null)
             {
-                throw new Exception("ether diceButtons, diceButtonFunctions or diceLabels does not exist");
+                throw new Exception(exceptionUpdateDiceDoesntFullyExist);
             }
             else
             {
@@ -120,10 +128,10 @@ namespace Opdracht7MaakEenYahtzeespel
                 for (int i = 0; i < diceButtons.Length; i++)
                 {
                     Controls.Remove(diceButtons[i]);
+                    diceButtons[i].Font = new Font(diceButtons[i].Font, FontStyle.Regular);
                     Controls.Remove(diceLabels[i]);
                 }
             }
-
             Dice[] rerollableDice = yahtzee.GetRerollableDice();
             int[] nonRerollableDice = yahtzee.GetNonrerollableDice();
             for(int i = 0; i < diceButtons.Length; i++)
@@ -141,15 +149,136 @@ namespace Opdracht7MaakEenYahtzeespel
                 }
             }
         }
-
-        private void button1_Click(object sender, EventArgs e)
+        private void UpdateScoreOptionButtons()
         {
-            UpdateDice();
+            if(scoreOptionButtons == null && scoreOptionButtonFunction == null)
+            {
+                scoreOptionButtons = new Button[yahtzee.GetNumberOfScoreOptions()];
+                scoreOptionButtonFunction = new ButtonFunction[scoreOptionButtons.Length];
+
+                Action<Object> scoreButtonFunction = (Object scoreOption) =>
+                {
+                    if (yahtzee.GetIfOption(scoreOption))
+                    {
+                        diceToPutAway.Clear();
+                        yahtzee.UseScoreOption(scoreOption);
+                        yahtzee.NextRound();
+                        UpdateDice();
+                        UpdateScoreOptionButtons();
+                        UpdateScoreBoard();
+                        UpdateRerollButton();
+                    }
+                    else
+                    {
+                        MessageBox.Show(messageBoxScoreOptionNotPossible);
+                    }
+                };
+
+                for(int i=0;i< scoreOptionButtons.Length; i++)
+                {
+                    scoreOptionButtons[i] = new Button();
+                    
+                    Point point = new Point(0, buttonHeight * (i + 1));
+
+                    scoreOptionButtons[i].Location = point;
+                    scoreOptionButtons[i].Width = this.ClientRectangle.Width;
+                    scoreOptionButtons[i].Height = buttonHeight;
+
+                    scoreOptionButtons[i].Click += new EventHandler(UseScoreButton);
+
+                    scoreOptionButtonFunction[i] = new ButtonFunction(scoreOptionButtons[i], scoreButtonFunction, null);
+
+                    Controls.Add(scoreOptionButtons[i]);
+                }
+            }
+            else if (scoreOptionButtons == null || scoreOptionButtonFunction == null)
+            {
+                throw new Exception(exceptionUpdateScoreOptionButtonsDoesntFullyExist);
+            }
+            else
+            {
+                for(int i = 0; i < scoreOptionButtons.Length; i++)
+                {
+                    Controls.Remove(scoreOptionButtons[i]);
+                }
+            }
+
+            string[] scoreTexts = yahtzee.GetScoreOptionsText();
+            object[] scoreOptions = yahtzee.GetScoreOptions();
+            int numberOfButton = 0;
+            for (int i = 0; i < scoreOptions.Length; i++)
+            {
+                if (scoreOptions[i] != null && numberOfButton < scoreOptionButtons.Length)
+                {
+                    scoreOptionButtons[numberOfButton].Text = scoreTexts[i];
+                    scoreOptionButtons[numberOfButton].Location = new Point(0, buttonHeight * (numberOfButton + 1));
+                    Controls.Add(scoreOptionButtons[numberOfButton]);
+                    scoreOptionButtonFunction[numberOfButton].SetFunctionParameter(scoreOptions[i]);
+                    numberOfButton++;
+                }
+            }
+        }
+        private void UpdateRerollButton()
+        {
+            if (rerollButton == null)
+            {
+                rerollButton = new Button();
+                rerollButton.Text = rerollButtonString;
+                rerollButton.Click += new EventHandler(rerollButtonFunction);
+                rerollButton.Location = new Point(diceButtonWith * Yahtzee.GetNumberOfDice(), 0);
+                rerollButton.Width = diceButtonWith;
+                rerollButton.Height = buttonHeight;
+            }
+
+            Controls.Remove(rerollButton);
+            if (yahtzee.GetCanReroll())
+            {
+                Controls.Add(rerollButton);
+            }
+        }
+        private void UpdateScoreBoard()
+        {
+            if (scoreBoard == null)
+            {
+                scoreBoard = new Label();
+                scoreBoard.Width = this.ClientRectangle.Width;
+                Controls.Add(scoreBoard);
+            }
+
+            int extraRows = 0;
+            object[] scoreOptionsToLookForNull = yahtzee.GetScoreOptions();
+            foreach(object checkForNull in scoreOptionsToLookForNull)
+            {
+                if (checkForNull == null)
+                {
+                    extraRows++;
+                }
+            }
+            scoreBoard.Height = buttonHeight * (buttonHeightLeftOver + extraRows);
+            scoreBoard.Location = new Point(0, buttonHeight * (yahtzee.GetNumberOfScoreOptions() + 1 - extraRows));
+            scoreBoard.Text = yahtzee.GetScoreBoardString();
         }
 
+        private void rerollButtonFunction(object sender, EventArgs e)
+        {
+            UpdateDice();
+            UpdateScoreOptionButtons();
+            UpdateRerollButton();
+        }
         private void UseDiceButton(object sender, EventArgs e)
         {
             foreach (ButtonFunction buttonFunction in diceButtonFunctions)
+            {
+                if (buttonFunction.IsSameButton(sender))
+                {
+                    buttonFunction.DoFunction();
+                    break;
+                }
+            }
+        }
+        private void UseScoreButton(object sender, EventArgs e)
+        {
+            foreach (ButtonFunction buttonFunction in scoreOptionButtonFunction)
             {
                 if (buttonFunction.IsSameButton(sender))
                 {

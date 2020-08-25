@@ -9,6 +9,16 @@ namespace Opdracht7MaakEenYahtzeespel
 {
     class Yahtzee
     {
+        private const string exceptionArrayLengthsNotSameSize = "the length of pointOptions and points is not the same, something has gone wrong and the program can't continue";
+        private const string exceptionScoreOptionNotFound = "a given score option was not found";
+        private const string sameNumberExtraPointBonusTextPartOne = "as a bonus you also get an aditional ";
+        private const string sameNumberExtraPointBonusTextPartTwo = " points";
+        private const string sameNumberExtraPointBonusUnreachedTextPartOne = "for the bonus points for the same dice you need ";
+        private const string sameNumberExtraPointBonusUnreachedTextPartTwo = " more points";
+        private const string pointTotalString = "which gives you a total of ";
+        private const string stringNextLine = "\r\n";
+        private const string optionNameToScoreDevider = ": ";
+
         private const int numberOfDice = 5;
         private const int numberOfDiceSides = 6;
         private const int maxTrowNumber = 3;
@@ -18,12 +28,15 @@ namespace Opdracht7MaakEenYahtzeespel
         private const int carréAmountOfDiceWithSameNumberThreshold = 4;
         private const int fullHouseAmountOfDiceWithSameNumberThresholdOne = 3;
         private const int fullHouseAmountOfDiceWithSameNumberThresholdTwo = 2;
+        private const int yahtzeeAmountOfDiceWithSameNumberThreshold = 5;
 
         private const int fullHousePoints = 25;
         private const int kleineStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold = 4;
         private const int kleineStraatPoints = 30;
         private const int grooteStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold = 5;
         private const int grooteStraatPoints = 40;
+        private const int yahtzeePointsInitial = 50;
+        private const int yahtzeePointsSuccessive = 100;
 
         private Dice[] dice;
         private List<int> dicePutAway;
@@ -96,7 +109,7 @@ namespace Opdracht7MaakEenYahtzeespel
                     sameNumberExtraPointBonusIndexes.Clear();
                 }
 
-                for (int i=1;i< numberOfDiceSides + 1; i++)
+                for (int i = 1; i < numberOfDiceSides + 1; i++)
                 {
                     string name = "all " + i + "s";
                     string textBeforePoints = "all " + i + " together get to a total of ";
@@ -104,7 +117,7 @@ namespace Opdracht7MaakEenYahtzeespel
                     Func<int[], int> calculatePoints = (int[] diceResults) =>
                       {
                           int total = 0;
-                          foreach(int result in diceResults)
+                          foreach (int result in diceResults)
                           {
                               if (result == targetNumber)
                               {
@@ -113,9 +126,9 @@ namespace Opdracht7MaakEenYahtzeespel
                           }
                           return total;
                       };
-                    PointOption option = new PointOption(name, calculatePoints, textBeforePoints);
+                    PointOption option = new PointOption(name, calculatePoints, textBeforePoints, false);
                     pointOptions.Add(option);
-                    for(int o = 0; o < pointOptions.Count; o++)
+                    for (int o = 0; o < pointOptions.Count; o++)
                     {
                         if (pointOptions[o] == option)
                         {
@@ -126,32 +139,32 @@ namespace Opdracht7MaakEenYahtzeespel
                 }
 
                 string threeOfAKindName = "Three Of A Kind";
-                string threeOfAKindTextBeforePoints = threeOfAKindName + " where "+ threeOfAKindAmountOfDiceWithSameNumberThreshold + " dice must be the same and all numbers are put together for a score of ";
-                Func<int[],int> threeOfAKindCalculatePoints=(int[] diceResults) =>
-                {
-                    for (int i=1;i<numberOfDiceSides+1; i++)
-                    {
-                        int amountOfDiceWithNumber = 0;
-                        for (int o = 0; o < diceResults.Length; o++)
-                        {
-                            if (diceResults[o] == i)
-                            {
-                                amountOfDiceWithNumber++;
-                            }
-                        }
-                        if (amountOfDiceWithNumber >= threeOfAKindAmountOfDiceWithSameNumberThreshold)
-                        {
-                            int result = 0;
-                            foreach(int diceResult in diceResults)
-                            {
-                                result += diceResult;
-                            }
-                            return result;
-                        }
-                    }
-                    return 0;
-                };
-                pointOptions.Add(new PointOption(threeOfAKindName, threeOfAKindCalculatePoints, threeOfAKindTextBeforePoints));
+                string threeOfAKindTextBeforePoints = threeOfAKindName + " where " + threeOfAKindAmountOfDiceWithSameNumberThreshold + " dice must be the same and all numbers are put together for a score of ";
+                Func<int[], int> threeOfAKindCalculatePoints = (int[] diceResults) =>
+                   {
+                       for (int i = 1; i < numberOfDiceSides + 1; i++)
+                       {
+                           int amountOfDiceWithNumber = 0;
+                           for (int o = 0; o < diceResults.Length; o++)
+                           {
+                               if (diceResults[o] == i)
+                               {
+                                   amountOfDiceWithNumber++;
+                               }
+                           }
+                           if (amountOfDiceWithNumber >= threeOfAKindAmountOfDiceWithSameNumberThreshold)
+                           {
+                               int result = 0;
+                               foreach (int diceResult in diceResults)
+                               {
+                                   result += diceResult;
+                               }
+                               return result;
+                           }
+                       }
+                       return 0;
+                   };
+                pointOptions.Add(new PointOption(threeOfAKindName, threeOfAKindCalculatePoints, threeOfAKindTextBeforePoints, false));
 
                 string carréName = "Carré";
                 string carréTextBeforePoints = carréName + " where " + carréAmountOfDiceWithSameNumberThreshold + " dice must be the same and all numbers are put together for a score of ";
@@ -179,7 +192,7 @@ namespace Opdracht7MaakEenYahtzeespel
                     }
                     return 0;
                 };
-                pointOptions.Add(new PointOption(carréName, carréCalculatePoints, carréTextBeforePoints));
+                pointOptions.Add(new PointOption(carréName, carréCalculatePoints, carréTextBeforePoints, false));
 
                 string fullHouseName = "Full House";
                 string fullHouseTextBeforePoints = fullHouseName + " where " + fullHouseAmountOfDiceWithSameNumberThresholdOne + " dice must be the same and " + fullHouseAmountOfDiceWithSameNumberThresholdTwo + " other dice must be the same for a total of ";
@@ -216,7 +229,7 @@ namespace Opdracht7MaakEenYahtzeespel
                      }
                      return 0;
                  };
-                pointOptions.Add(new PointOption(fullHouseName, fullHouseCalculatePoints, fullHouseTextBeforePoints));
+                pointOptions.Add(new PointOption(fullHouseName, fullHouseCalculatePoints, fullHouseTextBeforePoints, false));
 
                 string kleineStraatName = "Kleine Straat";
                 string kleineStraatTextBeforePoints = kleineStraatName + " where " + kleineStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold + " dice have to successively increase for a total of ";
@@ -228,7 +241,7 @@ namespace Opdracht7MaakEenYahtzeespel
                          for (int increment = 0; increment < kleineStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold; increment++)
                          {
                              bool incrementFound = false;
-                             for(int i = 0; i < diceResults.Length; i++)
+                             for (int i = 0; i < diceResults.Length; i++)
                              {
                                  if (diceResults[i] == startOfStreetNumber + increment)
                                  {
@@ -249,7 +262,7 @@ namespace Opdracht7MaakEenYahtzeespel
                      }
                      return 0;
                  };
-                pointOptions.Add(new PointOption(kleineStraatName, kleineStraatCalculatePoints, kleineStraatTextBeforePoints));
+                pointOptions.Add(new PointOption(kleineStraatName, kleineStraatCalculatePoints, kleineStraatTextBeforePoints, false));
 
                 string grooteStraatName = "Grote Straat";
                 string grooteStraatTextBeforePoints = kleineStraatName + " where " + grooteStraatAmountOfDiceThatHaveToIncrementallyIncreaseTheshold + " dice have to successively increase for a total of ";
@@ -282,9 +295,171 @@ namespace Opdracht7MaakEenYahtzeespel
                     }
                     return 0;
                 };
-                pointOptions.Add(new PointOption(grooteStraatName, grooteStraatCalculatePoints, grooteStraatTextBeforePoints));
+                pointOptions.Add(new PointOption(grooteStraatName, grooteStraatCalculatePoints, grooteStraatTextBeforePoints, false));
+
+                string yahtzeeName = "Yahtzee";
+                string yahtzeeTextBeforePoints = yahtzeeName + " where " + yahtzeeAmountOfDiceWithSameNumberThreshold + " dice must be the same for a total yahtzee score of ";
+                int amountOfTimesYahtzeeHasBeenTrown = 0;
+                Func<int[], int> yahtzeeCalculatePoints = (int[] diceResults) =>
+                {
+                    for (int i = 1; i < numberOfDiceSides + 1; i++)
+                    {
+                        int amountOfDiceWithNumber = 0;
+                        for (int o = 0; o < diceResults.Length; o++)
+                        {
+                            if (diceResults[o] == i)
+                            {
+                                amountOfDiceWithNumber++;
+                            }
+                        }
+                        if (amountOfDiceWithNumber >= yahtzeeAmountOfDiceWithSameNumberThreshold)
+                        {
+                            int result = yahtzeePointsInitial+ yahtzeePointsSuccessive* amountOfTimesYahtzeeHasBeenTrown;
+                            amountOfTimesYahtzeeHasBeenTrown++;
+                            return result;
+                        }
+                    }
+                    return 0;
+                };
+                pointOptions.Add(new PointOption(yahtzeeName, yahtzeeCalculatePoints, yahtzeeTextBeforePoints, true));
             }
         }
+
+        internal string GetScoreBoardString()
+        {
+            if (pointOptions.Count == points.Length)
+            {
+                string toReturn = "";
+                int totalScore = 0;
+                for(int i = 0; i < points.Length; i++)
+                {
+                    if (points[i] > 0)
+                    {
+                        for (int o=0;o< sameNumberExtraPointBonusIndexes.Count; o++)
+                        {
+                            if (sameNumberExtraPointBonusIndexes[o] == i)
+                            {
+                                toReturn += pointOptions[i].GetName() + optionNameToScoreDevider + points[i] + stringNextLine;
+                                totalScore += points[i];
+                            }
+                        }
+                    }
+                }
+
+                if(totalScore>= sameNumberExtraPointBonusThreshold)
+                {
+                    toReturn += sameNumberExtraPointBonusTextPartOne + sameNumberExtraPointBonusPoints + sameNumberExtraPointBonusTextPartTwo;
+                    totalScore += sameNumberExtraPointBonusThreshold;
+                }
+                else
+                {
+                    toReturn += sameNumberExtraPointBonusUnreachedTextPartOne + (sameNumberExtraPointBonusThreshold - totalScore) + sameNumberExtraPointBonusUnreachedTextPartTwo + stringNextLine + stringNextLine;
+                }
+                
+
+                for (int i = 0; i < points.Length; i++)
+                {
+                    if (points[i] > 0)
+                    {
+                        bool inSameNumbersForExtraPointsIndexes = false;
+                        for (int o = 0; o < sameNumberExtraPointBonusIndexes.Count; o++)
+                        {
+                            if (sameNumberExtraPointBonusIndexes[o] == i)
+                            {
+                                inSameNumbersForExtraPointsIndexes = true;
+                            }
+                        }
+                        if(inSameNumbersForExtraPointsIndexes == false)
+                        {
+                            toReturn += pointOptions[i].GetName() + optionNameToScoreDevider + points[i] + stringNextLine;
+                            totalScore += points[i];
+                        }
+                    }
+                }
+
+                toReturn += stringNextLine + pointTotalString + totalScore;
+                return toReturn;
+            }
+            else
+            {
+                throw new Exception(exceptionArrayLengthsNotSameSize);
+            }
+            throw new NotImplementedException();
+        }
+
+        internal bool GetCanReroll()
+        {
+            return trowNumber < maxTrowNumber;
+        }
+
+        internal bool GetIfOption(object scoreOption)
+        {
+            if (typeof(PointOption).IsInstanceOfType(scoreOption)){
+                return ((PointOption)scoreOption).IsOption(GetDiceResults());
+            }
+            return false;
+        }
+
+        public string[] GetScoreOptionsText()
+        {
+            string[] toReturn = new string[pointOptions.Count];
+            for(int i = 0; i < toReturn.Length; i++)
+            {
+                toReturn[i] = pointOptions[i].GetText(GetDiceResults());
+            }
+            return toReturn;
+        }
+        public Object[] GetScoreOptions()
+        {
+            if (pointOptions.Count == points.Length)
+            {
+                PointOption[] toReturn = new PointOption[points.Length];
+                for (int i = 0; i < toReturn.Length; i++)
+                {
+                    if (points[i] == 0 || pointOptions[i].CanBeUsedAgain())
+                    {
+                        toReturn[i] = pointOptions[i];
+                    }
+                }
+                return toReturn;
+            }
+            else
+            {
+                throw new Exception(exceptionArrayLengthsNotSameSize);
+            }
+        }
+
+        public void NextRound()
+        {
+            dicePutAway.Clear();
+            trowNumber = 0;
+        }
+
+        public void UseScoreOption(object scoreOption)
+        {
+            if (pointOptions.Count == points.Length)
+            {
+                bool scoreOptionFound = false;
+                for(int i = 0; i < points.Length; i++)
+                {
+                    if(pointOptions[i] == scoreOption)
+                    {
+                        scoreOptionFound = true;
+                        points[i] = pointOptions[i].GetPoints(GetDiceResults());
+                        break;
+                    }
+                }
+                if (scoreOptionFound == false)
+                {
+                    throw new Exception(exceptionScoreOptionNotFound);
+                }
+            }
+            else
+            {
+                throw new Exception(exceptionArrayLengthsNotSameSize);
+            }
+        }
+
         private void SetupPoints()
         {
             SetupPointOptions();
@@ -320,7 +495,7 @@ namespace Opdracht7MaakEenYahtzeespel
             }
             return toReturn;
         }
-        public bool Reroll(object[] diceToPutAway)
+        public void Reroll(object[] diceToPutAway)
         {
             foreach(object supposedlyDice in diceToPutAway)
             {
@@ -358,17 +533,7 @@ namespace Opdracht7MaakEenYahtzeespel
                 }
             }
 
-            bool canRerollAgain;
             trowNumber++;
-            if(trowNumber< maxTrowNumber)
-            {
-                canRerollAgain = true;
-            }
-            else
-            {
-                canRerollAgain = false;
-            }
-            return canRerollAgain;
         }
         public Dice[] GetRerollableDice()
         {
@@ -456,19 +621,21 @@ namespace Opdracht7MaakEenYahtzeespel
             }
         }
 
-        class PointOption
+        private class PointOption
         {
             private const string notAnOptionText = " is not an option";
 
             private string name;
             private Func<int[],int> calculatePoints;
             private string textBeforePoints;
+            private bool canBeUsedAgain;
             
-            internal PointOption(string name, Func<int[],int> calculatePoints, string textBeforePoints)
+            internal PointOption(string name, Func<int[],int> calculatePoints, string textBeforePoints,bool canBeUsedAgain)
             {
                 this.name = name;
                 this.calculatePoints = calculatePoints;
                 this.textBeforePoints = textBeforePoints;
+                this.canBeUsedAgain = canBeUsedAgain;
             }
             internal string GetName()
             {
@@ -496,6 +663,10 @@ namespace Opdracht7MaakEenYahtzeespel
             internal int GetPoints(int[] diceResults)
             {
                 return calculatePoints.Invoke(diceResults);
+            }
+            internal bool CanBeUsedAgain()
+            {
+                return canBeUsedAgain;
             }
         }
     }
